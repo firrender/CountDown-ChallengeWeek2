@@ -43,8 +43,8 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -147,7 +147,7 @@ fun MyApp(timer: TimerViewModel) {
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         FloatingActionButton(
-                            onClick = { timer.onStart(getAllTime(s, m, h)) },
+                            onClick = { timer.onStart(s.toLong()*1000 + m.toLong()*1000*60 + h.toLong()*1000*60*60) },
                             backgroundColor = yellow,
                             modifier = Modifier
                                 .width(80.dp)
@@ -166,10 +166,6 @@ fun MyApp(timer: TimerViewModel) {
             }
         }
     )
-}
-
-fun getAllTime (s: Int, m: Int, h: Int): Long {
-    return s.toLong()*1000 + m.toLong()*1000*60 + h.toLong()*1000*60*60
 }
 
 @Composable
@@ -198,7 +194,6 @@ private fun numbers(isRunning: Boolean, isHours: Boolean): Int {
         if (nums > maxNums) {
             nums = 0
             offset = 0f
-
         } else if (nums < 0) {
             nums = maxNums
             offset = if (isHours) 120f else 590f
