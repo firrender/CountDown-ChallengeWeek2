@@ -14,7 +14,6 @@
     package="com.example.androiddevchallenge2">
 
     <application
-        android:name="com.example.androiddevchallenge.TheLastApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

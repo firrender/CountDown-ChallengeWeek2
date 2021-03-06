@@ -8,32 +8,51 @@ import androidx.lifecycle.ViewModel
 class TimerViewModel : ViewModel() {
 
     private lateinit var timer: CountDownTimer
-    private val realTime = MutableLiveData("")
+    private val realTime = MutableLiveData("00:00:00")
+    private val isRunning = MutableLiveData(false)
+    private val totalTime = MutableLiveData(1F)
     val time: LiveData<String> = realTime
+    val runs: LiveData<Boolean> = isRunning
+    val totals: LiveData<Float> = totalTime
 
-    fun onTimeChange(newTime: String) {
-        realTime.value = newTime
+    fun onChange(time: String) {
+        realTime.value = time
     }
 
-    fun onTimerStart(time: Long) {
-        timer = object : CountDownTimer(time, 500) {
+    fun onRunning(run: Boolean) {
+        isRunning.value = run
+    }
+
+    fun onTotalTime(all: Float) {
+        totalTime.value = all
+    }
+
+    fun onCancel() {
+        timer.cancel()
+        onChange("00:00:00")
+        onRunning(false)
+    }
+
+    fun onStart(time: Long) {
+        timer = object : CountDownTimer(time, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                var minutes = (millisUntilFinished / 1000 / 60).toString()
-                var seconds = (millisUntilFinished / 1000 % 60).toString()
-                if (minutes.length == 1) minutes = "0$minutes"
-                if (seconds.length == 1) seconds = "0$seconds"
-                onTimeChange("$minutes:$seconds")
+                onTotalTime(if (time == 0L) 1F else millisUntilFinished.toFloat()/time.toFloat())
+                var s = (millisUntilFinished / 1000 % 60).toString()
+                var m = (millisUntilFinished / 1000 / 60  % 60).toString()
+                var h = (millisUntilFinished / 1000 / 60 / 60).toString()
+                if (s.length == 1) s = "0$s"
+                if (m.length == 1) m = "0$m"
+                if (h.length == 1) h = "0$h"
+                onChange("$h:$m:$s")
+                onRunning(true)
             }
 
             override fun onFinish() {
-                onTimeChange("")
+                onChange("00:00:00")
+                onRunning(false)
+                onTotalTime(1F)
             }
         }
         timer.start()
-    }
-
-    fun onTimerFinish() {
-        timer.cancel()
-        onTimeChange("")
     }
 }

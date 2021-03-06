@@ -16,28 +16,49 @@
 package com.example.androiddevchallenge
 
 import android.os.Bundle
-import android.os.Handler
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.ZeroCornerSize
-import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.Scaffold
+import androidx.compose.material.TopAppBar
+import androidx.compose.material.Text
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.androiddevchallenge.ui.theme.*
+import com.example.androiddevchallenge.ui.theme.MyTheme
+import com.example.androiddevchallenge.ui.theme.white
+import com.example.androiddevchallenge.ui.theme.yellow
+import com.example.androiddevchallenge.ui.theme.black40
+import com.example.androiddevchallenge.ui.theme.black
+import com.example.androiddevchallenge.ui.theme.typography
 import com.example.androiddevchallenge.ui.vm.TimerViewModel
-import kotlinx.coroutines.delay
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,20 +75,21 @@ class MainActivity : AppCompatActivity() {
 @Composable
 fun MyApp(timer: TimerViewModel) {
 
-    var mins = ""
-    var isRunning by rememberSaveable { mutableStateOf(false) }
-    if (isRunning) {
-        ProgressBars(mins, isRunning = false)
-    }
+    val time by timer.time.observeAsState("00:00:00")
+    val isRunning by timer.runs.observeAsState(false)
+    val totalTime by timer.totals.observeAsState(1F)
+    var s = 0
+    var m = 0
+    var h = 0
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Who are you counting down your life for?",
+                        text = "TAKE YOUR TIME",
                         color = white,
-                        style = MaterialTheme.typography.subtitle1,
+                        style = MaterialTheme.typography.h5,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -88,19 +110,28 @@ fun MyApp(timer: TimerViewModel) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Spacer(modifier = Modifier.weight(1f))
-                        numbers(timer)
-                        Text(text = " : ", style = MaterialTheme.typography.h2, color = black, modifier = Modifier.padding(top = 16.dp))
-                        numbers(timer)
-                        Text(text = " : ", style = MaterialTheme.typography.h2, color = black, modifier = Modifier.padding(top = 16.dp))
-                        mins = numbers(timer)
+                        h = numbers(isRunning, true)
+                        Text(text = " : ", style = MaterialTheme.typography.h2, color = if (isRunning) black40 else black, modifier = Modifier.padding(top = 16.dp))
+                        m = numbers(isRunning, false)
+                        Text(text = " : ", style = MaterialTheme.typography.h2, color = if (isRunning) black40 else black, modifier = Modifier.padding(top = 16.dp))
+                        s = numbers(isRunning, false)
                         Spacer(modifier = Modifier.weight(1f))
                     }
 
-                    ProgressBars(mins, isRunning)
+                    Box(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .fillMaxWidth()
+                            .height(400.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(progress = totalTime, strokeWidth = 6.dp, modifier = Modifier.fillMaxSize(), color = yellow)
+                        Text(text = time, style = MaterialTheme.typography.h2, color = black)
+                    }
 
                     Row(modifier = Modifier.fillMaxWidth()) {
                         FloatingActionButton(
-                            onClick = { isRunning = false; mins = "" },
+                            onClick = { timer.onCancel() },
                             backgroundColor = yellow,
                             modifier = Modifier
                                 .width(80.dp)
@@ -116,7 +147,7 @@ fun MyApp(timer: TimerViewModel) {
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         FloatingActionButton(
-                            onClick = { timer.onTimerStart(mins.toLong()) },
+                            onClick = { timer.onStart(getAllTime(s, m, h)) },
                             backgroundColor = yellow,
                             modifier = Modifier
                                 .width(80.dp)
@@ -137,16 +168,20 @@ fun MyApp(timer: TimerViewModel) {
     )
 }
 
+fun getAllTime (s: Int, m: Int, h: Int): Long {
+    return s.toLong()*1000 + m.toLong()*1000*60 + h.toLong()*1000*60*60
+}
+
 @Composable
-private fun numbers(timer: TimerViewModel): String {
-    var nums: Int
+private fun numbers(isRunning: Boolean, isHours: Boolean): Int {
+
+    var nums = 0
     var realNums = ""
+    val maxNums = if (isHours) 12 else 59
     var offset by remember { mutableStateOf(0f) }
-    //var offset by rememberSaveable { mutableStateOf(0f) }
 
     Box(
         Modifier
-            //.size(150.dp)
             .padding(10.dp)
             .scrollable(
                 orientation = Orientation.Vertical,
@@ -154,46 +189,24 @@ private fun numbers(timer: TimerViewModel): String {
                     offset += delta
                     delta
                 },
-                enabled = true
+                enabled = !isRunning
             )
             .background(white),
         contentAlignment = Alignment.Center
     ) {
         nums = offset.toInt() / 10
-        if (nums > 59) {
+        if (nums > maxNums) {
             nums = 0
             offset = 0f
 
         } else if (nums < 0) {
-            nums = 59
-            offset = 590f
+            nums = maxNums
+            offset = if (isHours) 120f else 590f
         }
         realNums = if (nums >= 10) nums.toString() else "0$nums"
-        Text(text = realNums, style = typography.h1, color = black, textAlign = TextAlign.Center)
+        Text(text = realNums, style = typography.h1, color = if (isRunning) black40 else black, textAlign = TextAlign.Center)
     }
-    return realNums
-}
-
-@Composable
-private fun ProgressBars(mins: String, isRunning: Boolean) {
-    var progress = if (mins.equals("")) 0 else mins.toInt()
-    Box(
-        modifier = Modifier
-            .padding(20.dp)
-            .fillMaxWidth()
-            .height(400.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(progress = progress/59f, strokeWidth = 6.dp, modifier = Modifier.fillMaxSize(), color = yellow)
-        if (progress != 0 && isRunning) {
-            while (progress != 0 && isRunning) {
-                //delay(1000L)
-                progress--
-            }
-        }
-        Text(text = "00:00:$progress", style = MaterialTheme.typography.h2, color = black)
-    }
-
+    return nums
 }
 
 @Preview("MainActivity")
