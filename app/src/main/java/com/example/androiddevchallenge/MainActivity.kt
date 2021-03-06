@@ -147,7 +147,7 @@ fun MyApp(timer: TimerViewModel) {
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         FloatingActionButton(
-                            onClick = { timer.onStart(s.toLong()*1000 + m.toLong()*1000*60 + h.toLong()*1000*60*60) },
+                            onClick = { timer.onStart(s.toLong() * 1000 + m.toLong() * 1000 * 60 + h.toLong() * 1000 * 60 * 60) },
                             backgroundColor = yellow,
                             modifier = Modifier
                                 .width(80.dp)

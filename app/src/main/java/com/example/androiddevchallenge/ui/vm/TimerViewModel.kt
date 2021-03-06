@@ -51,9 +51,9 @@ class TimerViewModel : ViewModel() {
     fun onStart(time: Long) {
         timer = object : CountDownTimer(time, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                onTotalTime(if (time == 0L) 1F else millisUntilFinished.toFloat()/time.toFloat())
+                onTotalTime(if (time == 0L) 1F else millisUntilFinished.toFloat() / time.toFloat())
                 var s = (millisUntilFinished / 1000 % 60).toString()
-                var m = (millisUntilFinished / 1000 / 60  % 60).toString()
+                var m = (millisUntilFinished / 1000 / 60 % 60).toString()
                 var h = (millisUntilFinished / 1000 / 60 / 60).toString()
                 if (s.length == 1) s = "0$s"
                 if (m.length == 1) m = "0$m"
